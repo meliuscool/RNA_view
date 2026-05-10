@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Neural Draw</title>
+
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+
+<style>
+
+body{
+    margin:0;
+    background:#111;
+    overflow:hidden;
+    color:white;
+    font-family:Arial;
+}
+
+</style>
+</head>
+
+<body>
+
+<script>
+
+let predictions = [];
+
+function setup(){
+
+    createCanvas(windowWidth, windowHeight);
+
+    background(0);
+
+    for(let i=0;i<10;i++){
+
+        predictions.push(random(0,1));
+    }
+}
+
+function draw(){
+
+    fill(20);
+    noStroke();
+
+    rect(width*0.7,0,width*0.3,height);
+
+    if(mouseIsPressed){
+
+        fill(255);
+        noStroke();
+
+        circle(mouseX,mouseY,40);
+
+        randomizePredictions();
+    }
+
+    drawPredictions();
+}
+
+function randomizePredictions(){
+
+    let total = 0;
+
+    for(let i=0;i<10;i++){
+
+        predictions[i] = random(0,1);
+
+        total += predictions[i];
+    }
+
+    for(let i=0;i<10;i++){
+
+        predictions[i] /= total;
+    }
+}
+
+function drawPredictions(){
+
+    textSize(24);
+
+    for(let i=0;i<10;i++){
+
+        fill(255);
+
+        text(
+            i + ": " +
+            nf(predictions[i]*100,2,1)
+            + "%",
+            width*0.73,
+            80 + i*60
+        );
+
+        fill(0,255,120);
+
+        rect(
+            width*0.73,
+            100 + i*60,
+            predictions[i]*200,
+            20
+        );
+    }
+}
+
+</script>
+
+</body>
+</html> 
