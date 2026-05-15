@@ -159,7 +159,7 @@ p{
 .output_graph {
   width: 28px;
   height: 280px;
-  border: 1px solid;
+  border: 1px solid #444;
 }
 
 .vertical-numbers {
@@ -168,6 +168,8 @@ p{
   font-family: 'Times New Roman', TimesNewRoman, Times, Baskerville, Georgia, serif;
   font-size: 15px;
   line-height: 28px;
+  color: #aaa;
+  user-select: none;
 }
 
 footer {
