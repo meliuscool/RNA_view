@@ -486,8 +486,8 @@ function findxy(res, e) {
     if (res == 'down') {
         if (clearBeforeDraw == true) {
           ctx.clearRect(0,0,canvas.width,canvas.height);
-          document.getElementById('nnInput').innerHTML='';
-          //document.getElementById('nnOut').innerHTML='';
+          //document.getElementById('nnInput').innerHTML='';
+          document.getElementById('nnOut').innerHTML='';
           paths = [];
           clearBeforeDraw = false;
         }
