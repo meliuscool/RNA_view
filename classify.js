@@ -458,6 +458,25 @@ function init() {
     canvas.addEventListener("mouseout", function (e) {
         findxy('out', e)
     }, false);
+
+    // Touch support
+    canvas.addEventListener("touchstart", function (e) {
+        e.preventDefault();
+        var touch = e.touches[0];
+        var mouseEvent = new MouseEvent("mousedown", { clientX: touch.clientX, clientY: touch.clientY });
+        canvas.dispatchEvent(mouseEvent);
+    }, { passive: false });
+    canvas.addEventListener("touchmove", function (e) {
+        e.preventDefault();
+        var touch = e.touches[0];
+        var mouseEvent = new MouseEvent("mousemove", { clientX: touch.clientX, clientY: touch.clientY });
+        canvas.dispatchEvent(mouseEvent);
+    }, { passive: false });
+    canvas.addEventListener("touchend", function (e) {
+        e.preventDefault();
+        var mouseEvent = new MouseEvent("mouseup", {});
+        canvas.dispatchEvent(mouseEvent);
+    }, { passive: false });
 }
 
 function draw(ctx, color, lineWidth, x1, y1, x2, y2) {
@@ -486,7 +505,6 @@ function findxy(res, e) {
     if (res == 'down') {
         if (clearBeforeDraw == true) {
           ctx.clearRect(0,0,canvas.width,canvas.height);
-          //document.getElementById('nnInput').innerHTML='';
           document.getElementById('nnOut').innerHTML='';
           paths = [];
           clearBeforeDraw = false;
