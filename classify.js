@@ -439,6 +439,9 @@ function recognize() {
     clearBeforeDraw = true;
     var dt = new Date() - t1;
     console.log('recognize time: '+dt+'ms');
+  }).catch(err => {
+    console.error('Erro na rede neural:', err);
+    clearBeforeDraw = true; // garante limpeza no próximo desenho mesmo em caso de falha
   });
 }
     
@@ -631,167 +634,77 @@ let Plot_Input = (nnInput, ctx) =>{
   }
 }
 
-let Plot = (activations,dim,elementId) => {
-     
-    document.querySelector(elementId).innerHTML = "";
-
-    activations = activations.map((p,i)=>{
-        let s = Math.floor(i/dim)*dim;
-        let e = Math.floor((i/dim) + 1 ) * dim;
-
-        return {
-            variable: s.toString() +" - " + e.toString(),
-            group: Math.floor((i%dim)).toString(),
-            value: p.toString()
-        }
-    })
-
-
-// set the dimensions and margins of the graph
-var margin = {top: 80, right: 25, bottom: 30, left: 40}, // might change
-  width = 280,
-  height = 280;
-
-// append the svg object to the body of the page
-var svg = d3.select(elementId)
-.append("svg")
-  .attr("width", 280)
-  .attr("height", 280)
-.append("g")
-  .attr("transform",
-        "translate(" + 0 + "," + 0 + ")");
-
-//Read the data
-let data = activations;
-
-console.log(data)
-
-var myGroups = d3.map(data, function(d){return d.group;}).keys()
-  var myVars = d3.map(data, function(d){return d.variable;}).keys()
-
-  var x = d3.scaleBand()
-    .range([ 0, width ])
-    .domain(myGroups)
-    .padding(0);
-    
-
-  var y = d3.scaleBand()
-    .range([ height, 0 ])
-    .domain(myVars)
-    .padding(0);
-  
-
-  var myColor = d3.scaleLinear()
-    .domain([0,0.25,0.5,0.75,1])
-    .range([ '#000','#352f70', '#3347cc', '#2187ff','#00ffff']);
-
-
-  var tooltip = d3.select(elementId)
-
-  var mouseover = function(d) {}
-  var mousemove = function(d) {}
-  var mouseleave = function(d) {}
-
-  svg.selectAll()
-    .data(data, function(d) {return d.group+':'+d.variable;})
-    .enter()
-    .append("rect")
-      .attr("x", function(d) { return x(d.group) })
-      .attr("y", function(d) { return y(d.variable) })
-      .attr("rx", 0)
-      .attr("ry", 0)
-      .attr("width", x.bandwidth() )
-      .attr("height", y.bandwidth())
-      .style("fill", function(d) { return myColor(d.value)} )
-      .style("stroke-width", 4)
-      .style("stroke", "none")
-      .style("opacity", 0.9)
-      .style("border","none")
-    .on("mouseover", mouseover)
-    .on("mousemove", mousemove)
-    .on("mouseleave", mouseleave)
+// Color scale matching the original D3 palette: black → purple → blue → sky → cyan
+// Domain: [0, 0.25, 0.5, 0.75, 1.0]
+function activationColor(value) {
+  const stops = [
+    [0,    [0,   0,   0  ]],
+    [0.25, [53,  47,  112]],
+    [0.5,  [51,  71,  204]],
+    [0.75, [33,  135, 255]],
+    [1.0,  [0,   255, 255]],
+  ];
+  value = Math.max(0, Math.min(1, parseFloat(value)));
+  for (let i = 1; i < stops.length; i++) {
+    if (value <= stops[i][0]) {
+      const t = (value - stops[i-1][0]) / (stops[i][0] - stops[i-1][0]);
+      const [r1, g1, b1] = stops[i-1][1];
+      const [r2, g2, b2] = stops[i][1];
+      return `rgb(${Math.round(r1 + t*(r2-r1))},${Math.round(g1 + t*(g2-g1))},${Math.round(b1 + t*(b2-b1))})`;
+    }
+  }
+  return 'rgb(0,255,255)';
 }
 
+// Hidden layer heatmap — replaces D3 SVG with a plain canvas
+let Plot = (activations, dim, elementId) => {
+  const container = document.querySelector(elementId);
+  container.innerHTML = '';
 
-// plotting output layer as a vertical vector instead of a square
-let Plot_Softmax = (activations,dim,elementId) => {     // l3 is called by: Plot_Softmax(output.slice(0),4,"#layer3");
-     
-  document.querySelector(elementId).innerHTML = "";
+  const SIZE = 280;
+  const cvs = document.createElement('canvas');
+  cvs.width = SIZE;
+  cvs.height = SIZE;
+  container.appendChild(cvs);
+  const c = cvs.getContext('2d');
 
-  activations = activations.map((p,i)=>{
-      let s = Math.floor(i/dim)*dim;
-      let e = Math.floor((i/dim) + 1 ) * dim;
+  const cols = dim;
+  const rows = Math.ceil(activations.length / cols);
+  const cellW = SIZE / cols;
+  const cellH = SIZE / rows;
 
-      return {
-          variable: s.toString() +" - " + e.toString(),
-          group: Math.floor((i%dim)).toString(),
-          value: p.toString()
-      }
-  })
+  activations.forEach((val, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    c.fillStyle = activationColor(val);
+    c.fillRect(Math.floor(col * cellW), Math.floor(row * cellH),
+               Math.ceil(cellW), Math.ceil(cellH));
+  });
+}
 
-// set the dimensions and margins of the graph
-var margin = {top: 80, right: 25, bottom: 30, left: 40}, // might change
-width = 28;
-height = 280;
+// Output probabilities — vertical strip, digit 0 at bottom, 9 at top
+// Labels are handled by the external scale_div in the HTML
+let Plot_Softmax = (activations, dim, elementId) => {
+  const container = document.querySelector(elementId);
+  container.innerHTML = '';
 
-// append the svg object to the body of the page
-var svg = d3.select(elementId)
-.append("svg")
-.attr("width", 28)
-.attr("height", 280)
-.append("g")
-.attr("transform",
-      "translate(" + 0 + "," + 0 + ")");
+  const W = 28, H = 280;
+  const cvs = document.createElement('canvas');
+  cvs.width = W;
+  cvs.height = H;
+  cvs.style.width  = '100%';
+  cvs.style.height = '100%';
+  container.appendChild(cvs);
+  const c = cvs.getContext('2d');
 
-//Read the data
-let data = activations;
+  const cellH = H / activations.length;
 
-console.log(data)
-
-var myGroups = d3.map(data, function(d){return d.group;}).keys()
-var myVars = d3.map(data, function(d){return d.variable;}).keys()
-
-var x = d3.scaleBand()
-  .range([ 0, width ])
-  .domain(myGroups)
-  .padding(0);
-  
-
-var y = d3.scaleBand()
-  .range([ height, 0 ])
-  .domain(myVars)
-  .padding(0);
-
-
-var myColor = d3.scaleLinear()
-  .domain([0,0.25,0.5,0.75,1])
-  .range([ '#000','#352f70', '#3347cc', '#2187ff','#00ffff']);// original: (['#ed6c72','#e75665', '#e73735', '#d7322f','#d80909']);
-
-
-var tooltip = d3.select(elementId)
-
-var mouseover = function(d) {}
-var mousemove = function(d) {}
-var mouseleave = function(d) {}
-
-svg.selectAll()
-  .data(data, function(d) {return d.group+':'+d.variable;})
-  .enter()
-  .append("rect")
-    .attr("x", function(d) { return 0 }) //return x(d.group) })
-    .attr("y", function(d) { return y(d.variable) })
-    .attr("rx", 0)
-    .attr("ry", 0)
-    .attr("width", x.bandwidth() )
-    .attr("height", y.bandwidth())
-    .style("fill", function(d) { return myColor(d.value)} )
-    .style("stroke-width", 4)
-    .style("stroke", "none")
-    .style("opacity",0.9)
-    .style("border","none")
-  .on("mouseover", mouseover)
-  .on("mousemove", mousemove)
-  .on("mouseleave", mouseleave)
+  activations.forEach((val, i) => {
+    // index 0 (digit "0") at the bottom, index 9 at the top — matches the scale_div order
+    const y = H - (i + 1) * cellH;
+    c.fillStyle = activationColor(val);
+    c.fillRect(0, Math.floor(y), W, Math.ceil(cellH));
+  });
 }
 
 init();
