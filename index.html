@@ -12,8 +12,6 @@ content="width=device-width, initial-scale=1.0">
 
 <link href="./style.css" rel="stylesheet"/>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.16.0/d3.min.js"></script>
-
 <style>
 
 body{
@@ -260,13 +258,17 @@ Handwritten Digit Recognition using MNIST
 
     <div class="panel">
 
-        <div id="layer3"
-        class="output_graph">
-        </div>
+        <div style="display:flex; flex-direction:row; align-items:flex-start;">
 
-         <div class="scale_div">
+            <div id="layer3"
+            class="output_graph">
+            </div>
+
+            <div class="scale_div">
                 <div class="vertical-numbers">9<br>8<br>7<br>6<br>5<br>4<br>3<br>2<br>1<br>0</div>
             </div>
+
+        </div>
 
         <p class="label">
             Output Probabilities
